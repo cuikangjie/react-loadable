@@ -18,26 +18,44 @@ function isWebpackReady(getModuleIds) {
   });
 }
 
-function load(loader) {
-  let promise = loader();
-
+function load(loader, beforeLoader, props) {
   let state = {
     loading: true,
     loaded: null,
     error: null
   };
 
-  state.promise = promise
-    .then(loaded => {
-      state.loading = false;
-      state.loaded = loaded;
-      return loaded;
-    })
-    .catch(err => {
-      state.loading = false;
-      state.error = err;
-      throw err;
-    });
+  if (beforeLoader) {
+    state.promise = beforeLoader(props)
+      .then(() => {
+        console.log(4);
+        return loader();
+      })
+      .then(loaded => {
+        console.log(5);
+        state.loading = false;
+        state.loaded = loaded;
+        return loaded;
+      })
+      .catch(err => {
+        state.loading = false;
+        state.error = err;
+        throw err;
+      });
+  } else {
+    let promise = loader();
+    state.promise = promise
+      .then(loaded => {
+        state.loading = false;
+        state.loaded = loaded;
+        return loaded;
+      })
+      .catch(err => {
+        state.loading = false;
+        state.error = err;
+        throw err;
+      });
+  }
 
   return state;
 }
@@ -117,9 +135,9 @@ function createLoadableComponent(loadFn, options) {
 
   let res = null;
 
-  function init() {
+  function init(props) {
     if (!res) {
-      res = loadFn(opts.loader);
+      res = loadFn(opts.loader, opts.beforeLoader, props);
     }
     return res.promise;
   }
@@ -137,7 +155,7 @@ function createLoadableComponent(loadFn, options) {
   return class LoadableComponent extends React.Component {
     constructor(props) {
       super(props);
-      init();
+      init(props);
 
       this.state = {
         error: res.error,
@@ -155,7 +173,7 @@ function createLoadableComponent(loadFn, options) {
     };
 
     static preload() {
-      return init();
+      return init(this.porps);
     }
 
     componentWillMount() {
@@ -225,7 +243,7 @@ function createLoadableComponent(loadFn, options) {
 
     retry = () => {
       this.setState({ error: null, loading: true, timedOut: false });
-      res = loadFn(opts.loader);
+      res = loadFn(opts.loader, opts.beforeLoader, this.props);
       this._loadModule();
     };
 
