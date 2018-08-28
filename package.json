@@ -1,6 +1,6 @@
 {
   "name": "kin-react-loadable",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "description": "A higher order component for loading components with promises",
   "main": "lib/index.js",
   "author": "James Kyle <me@thejameskyle.com>",
