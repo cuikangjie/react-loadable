@@ -28,11 +28,9 @@ function load(loader, beforeLoader, props) {
   if (beforeLoader) {
     state.promise = beforeLoader(props)
       .then(() => {
-        console.log(4);
         return loader();
       })
       .then(loaded => {
-        console.log(5);
         state.loading = false;
         state.loaded = loaded;
         return loaded;
@@ -138,6 +136,17 @@ function createLoadableComponent(loadFn, options) {
   function init(props) {
     if (!res) {
       res = loadFn(opts.loader, opts.beforeLoader, props);
+    } else if (opts.beforeLoader) {
+      if (res.error) {
+        res = loadFn(opts.loader, opts.beforeLoader, props);
+      } else {
+        return opts
+          .beforeLoader(props)
+          .then(() => {
+            return res.promise;
+          })
+          .catch(err => {});
+      }
     }
     return res.promise;
   }
